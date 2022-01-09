@@ -1,7 +1,6 @@
 #ifndef LIST_H
 #define LIST_H
 #include <functional>
-#include "cstddef"
 
 template <typename Data> class List
 {
@@ -23,43 +22,74 @@ public:
     };
 
     // Creates new list
-    List() : _head(nullptr), _tail(nullptr)
+    List() : firstItem(nullptr)
     {
-
     }
 
     // Destroys the list and frees the memory
     ~List()
     {
-        Item* current = _head;
-        while (current != _tail) {
-            _head = current->next();
-            delete current;
-            current = _head;
+        Item *item;
+        while (item)
+        {
+            item = first();
+            if (firstItem->next() == firstItem && firstItem->prev() == firstItem)
+            {
+                firstItem = nullptr;
+                delete item;
+                break;
+            }
+            firstItem = item->next();
+            firstItem->setPrev(item->prev());
+            item->prev()->setNext(firstItem);
+            delete item;
         }
-        delete _head;
     }
 
     // Retrieves the first item from the list
     Item *first()
     {
-        return _head;
+        return firstItem;
     }
 
     // Inserts new list item into the beginning
     Item *insert(Data data)
     {
-        if (_head == nullptr) {
-            _head = new Item(data);
-            _tail = _head;
-            return _tail;
-        } else {
-            Item* newItem = new Item(data);
-            _head->setPrev(newItem);
-            newItem->setNext(_head);
-            _head = newItem;
-            return newItem;
+        Item* newItem = new Item(data);
+        if (firstItem == nullptr)
+        {
+            firstItem = newItem;
+            firstItem->setNext(firstItem);
+            firstItem->setPrev(firstItem);
         }
+        else {
+            newItem->setNext(firstItem);
+            newItem->setPrev(firstItem->prev());
+            firstItem->prev()->setNext(newItem);
+            firstItem->setPrev(newItem);
+            firstItem = newItem;
+        }
+
+        return firstItem;
+    }
+
+    Item *insert_end(Data data)
+    {
+        Item *newItem = new Item(data);
+        if (firstItem == nullptr)
+        {
+            firstItem = newItem;
+            firstItem->setNext(firstItem);
+            firstItem->setPrev(firstItem);
+        }
+        else {
+
+            newItem->setNext(firstItem);
+            newItem->setPrev(firstItem->prev());
+            firstItem->prev()->setNext(newItem);
+            firstItem->setPrev(newItem);
+        }
+        return newItem;
     }
 
     // Inserts new list item after the specified item
@@ -67,13 +97,10 @@ public:
     {
         Item* newItem = new Item(data);
         newItem->setNext(item->next());
-        if (item->next() != nullptr) {
-            item->next()->setPrev(newItem);
-        } else {
-            _tail = newItem;
-        }
         newItem->setPrev(item);
+        item->next()->setPrev(newItem);
         item->setNext(newItem);
+
         return newItem;
     }
 
@@ -82,53 +109,50 @@ public:
     // Should be O(1)
     Item *erase(Item *item)
     {
-        auto* prev = item->prev();
-        auto* next = item->next();
-        if (prev != nullptr) {
-            prev->setNext(item->next());
-        } else {
-            _head = next;
+        if (firstItem->next() == firstItem && firstItem->prev() == firstItem) {
+            firstItem = nullptr;
+            delete item;
+            return firstItem;
         }
-        if (next != nullptr) {
-            next->setPrev(item->prev());
-        } else {
-            _tail = prev;
+        else {
+            if (item == firstItem)
+                firstItem = item->next();
+            item->next()->setPrev(item->prev());
+            item->prev()->setNext(item->next());
+            Item *buff_item = item->next();
+            delete item;
+            return buff_item;
         }
-        delete item;
-        return next;
+
+
     }
 
     // Deletes the list item following the specified one
     // Should be O(1)
     Item *erase_next(Item *item)
     {
-        if(item->next() == nullptr) {
-            return nullptr;
-        }
-        if (item->next() == _tail) {
-            delete item->next();
-            item->setNext(nullptr);
-            _tail = item;
-            return item;
-        }
-        auto *nextItem = item->next()->next();
-        auto *deletedItem = item->next();
-        item->setNext(nextItem);
-        nextItem->setPrev(item);
-        delete deletedItem;
-        return nextItem;
+        return nullptr;
     }
 
-    void foreach(std::function<void(Data const& item)> fun) {
-        for (auto item = this->first() ; item ; item = item->next())
-        {
-            fun(item->data());
-        }
+    void get_list(){
+        Item *item = first();
+        do {
+            std::cout << item->data() << ' ';
+            item = item->next();
+        }while (item != firstItem);
     }
+
+    bool empty()
+    {
+        if (firstItem == nullptr)
+            return true;
+        else
+            return false;
+    }
+
 private:
     // private data should be here
-    Item* _tail;
-    Item* _head;
-};
 
+    Item* firstItem;
+};
 #endif
